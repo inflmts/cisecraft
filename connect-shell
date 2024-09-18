@@ -1,0 +1,10 @@
+#!/bin/sh
+
+echo "You are now connected to CISECraft."
+echo "Access the server at: localhost:25452"
+echo "Type 'q' and press Enter to quit."
+while read -r line; do
+  if [ "$line" = q ]; then
+    break
+  fi
+done

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Place this file in the same directory as your server.jar, edit
+  to taste, and add -Dlog4j.configurationFile=log4j.xml to your
+  server startup flags.
+
+  More log4j example configs can be found at
+  <http://logging.apache.org/log4j/2.x/manual/appenders.html>.
+-->
+<Configuration status="warn">
+  <Appenders>
+    <Console name="stdout">
+      <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %m%n" />
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="stdout"/>
+    </Root>
+  </Loggers>
+</Configuration>

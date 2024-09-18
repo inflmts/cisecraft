@@ -1,0 +1,11 @@
+[Unit]
+Description=CISECraft Minecraft Server
+ConditionHost=storm.cise.ufl.edu
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env ${HOME}/cisecraft/server
+SuccessExitStatus=143
+
+[Install]
+WantedBy=default.target

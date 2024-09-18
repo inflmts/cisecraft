@@ -1,0 +1,94 @@
+#!/bin/sh
+
+set -ue
+
+echo() { printf '%s\n' "$*"; }
+
+# this is for JNA
+export XDG_CACHE_HOME="$XDG_RUNTIME_DIR/cache"
+
+server_dir_prefix=/tmp/cisecraft-
+server_dir=
+
+# search for the server directory using the prefix
+# and make sure we own it
+for dir in "$server_dir_prefix"??????; do
+  if [ -d "$dir" ] && [ -O "$dir" ]; then
+    server_dir=$dir
+    break
+  fi
+done
+
+# create the server directory if none was found
+if [ -z "$server_dir" ]; then
+  server_dir=$(mktemp -d "${server_dir_prefix}XXXXXX") || exit 1
+fi
+
+cd "$server_dir"
+
+server_jar_url="https://meta.fabricmc.net/v2/versions/loader/1.21.1/0.16.3/1.0.1/server/jar"
+server_jar="fabric-1.21.1-0.16.3-1.0.1.jar"
+java_dist_url="https://download.java.net/java/GA/jdk22.0.2/c9ecb94cd31b495da20a27d4581645e8/9/GPL/openjdk-22.0.2_linux-x64_bin.tar.gz"
+java_dir="jdk-22.0.2"
+
+# download Java if necessary
+if [ ! -f "$java_dir/bin/java" ]; then
+  echo "Downloading Java..."
+  curl -Lf -o "java.tar.gz" "$java_dist_url"
+  echo "Extracting Java..."
+  tar -xf "java.tar.gz"
+  rm "java.tar.gz"
+fi
+
+# download server JAR if necessary
+if [ ! -f "$server_jar" ]; then
+  echo "Downloading server JAR..."
+  curl -Lf -o "$server_jar" "$server_jar_url"
+fi
+
+# create mod directory
+mkdir -p mods
+
+mods='
+https://cdn.modrinth.com/data/P7dR8mSH/versions/gQS3JbZO/fabric-api-0.103.0+1.21.1.jar
+https://cdn.modrinth.com/data/t6XBQ2xn/versions/30ak0J3Q/tick-stasis-1.1.0.jar
+https://cdn.modrinth.com/data/FJI3H6YI/versions/Yds9fTAP/convenient-mobgriefing-2.1.2.jar
+'
+
+# prune old mods
+for file in mods/*.jar; do
+  [ -e "$file" ] || continue
+  for mod in $mods; do
+    mod_file="mods/${mod##*/}"
+    if [ "$file" = "$mod_file" ]; then
+      continue 2
+    fi
+  done
+  echo "Removing $file"
+  rm "$file"
+done
+
+# install new mods
+for mod in $mods; do
+  mod_file="mods/${mod##*/}"
+  if [ ! -e "mods/${mod##*/}" ]; then
+    echo "Downloading $mod_file"
+    curl -LfsS -o "$mod_file" "$mod"
+  fi
+done
+
+# agree to EULA
+if [ ! -e eula.txt ]; then
+  echo "Generating eula.txt..."
+  echo "eula=true" > eula.txt
+fi
+
+# link files
+ln -sfT ~/cisecraft/server.properties server.properties
+ln -sfT ~/cisecraft/ops.json ops.json
+ln -sfT ~/cisecraft/world world
+
+echo "Starting server..."
+exec "$java_dir/bin/java" \
+  -Dlog4j.configurationFile="$HOME/cisecraft/log4j.xml" \
+  -jar "$server_jar" --nogui "$@"
