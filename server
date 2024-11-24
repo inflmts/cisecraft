@@ -2,37 +2,52 @@
 
 set -ue
 
-echo() { printf '%s\n' "$*"; }
-
-# this is for JNA
-export XDG_CACHE_HOME="$XDG_RUNTIME_DIR/cache"
-
-server_dir_prefix=/tmp/cisecraft-
-server_dir=
-
-# search for the server directory using the prefix
-# and make sure we own it
-for dir in "$server_dir_prefix"??????; do
-  if [ -d "$dir" ] && [ -O "$dir" ]; then
-    server_dir=$dir
-    break
-  fi
-done
-
-# create the server directory if none was found
-if [ -z "$server_dir" ]; then
-  server_dir=$(mktemp -d "${server_dir_prefix}XXXXXX") || exit 1
-fi
-
-cd "$server_dir"
-
+source_dir="$HOME/cisecraft"
+server_dir=/tmp/cisecraft
 server_jar_url="https://meta.fabricmc.net/v2/versions/loader/1.21.1/0.16.3/1.0.1/server/jar"
 server_jar="fabric-1.21.1-0.16.3-1.0.1.jar"
 java_dist_url="https://download.java.net/java/GA/jdk22.0.2/c9ecb94cd31b495da20a27d4581645e8/9/GPL/openjdk-22.0.2_linux-x64_bin.tar.gz"
 java_dir="jdk-22.0.2"
 
+server_args=
+
+err() { printf >&2 'error: %s\n' "$*"; }
+warn() { print >&2 'warning: %s\n' "$*"; }
+echo() { printf '%s\n' "$*"; }
+
+usage() {
+  cat >&2 <<EOF
+Usage:
+  server [<option>...]
+
+  Launch the CISECraft Minecraft server.
+
+Options:
+  --init    initialize server and exit
+  --help    show this help and exit
+EOF
+}
+
+for opt; do
+  case $opt in
+    --init) server_args='--initSettings' ;;
+    --help) usage; exit 0 ;;
+    *) err "invalid option: $opt"; exit 2 ;;
+  esac
+done
+
+# this is for JNA
+export XDG_CACHE_HOME="$XDG_RUNTIME_DIR/cache"
+
+# no need to check if we own the server directory
+# something will fail eventually
+
+mkdir -p "$server_dir"
+cd "$server_dir"
+
 # download Java if necessary
 if [ ! -f "$java_dir/bin/java" ]; then
+  rm -rf "$java_dir"
   echo "Downloading Java..."
   curl -Lf -o "java.tar.gz" "$java_dist_url"
   echo "Extracting Java..."
@@ -83,12 +98,14 @@ if [ ! -e eula.txt ]; then
   echo "eula=true" > eula.txt
 fi
 
-# link files
-ln -sfT ~/cisecraft/server.properties server.properties
-ln -sfT ~/cisecraft/ops.json ops.json
-ln -sfT ~/cisecraft/world world
+# link/copy persistent files
+ln -sfT "$source_dir/world" world
+cp -t . \
+  "$source_dir/ops.json" \
+  "$source_dir/server.properties" \
+  "$source_dir/usercache.json"
 
 echo "Starting server..."
 exec "$java_dir/bin/java" \
-  -Dlog4j.configurationFile="$HOME/cisecraft/log4j.xml" \
-  -jar "$server_jar" --nogui "$@"
+  -Dlog4j.configurationFile="$source_dir/log4j.xml" \
+  -jar "$server_jar" --nogui $server_args

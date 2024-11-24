@@ -4,7 +4,7 @@ ConditionHost=storm.cise.ufl.edu
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/env ${HOME}/cisecraft/server
+ExecStart=/bin/sh ${HOME}/cisecraft/server
 SuccessExitStatus=143
 
 [Install]
