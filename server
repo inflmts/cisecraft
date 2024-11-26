@@ -100,10 +100,10 @@ fi
 
 # link/copy persistent files
 ln -sfT "$source_dir/world" world
-cp -t . \
-  "$source_dir/ops.json" \
-  "$source_dir/server.properties" \
-  "$source_dir/usercache.json"
+cp -T "$source_dir/ops.json" ops.json
+cp -T "$source_dir/server.properties" server.properties
+[ -e world/usercache.json ] || : >> world/usercache.json
+ln -sfT world/usercache.json usercache.json
 
 echo "Starting server..."
 exec "$java_dir/bin/java" \
