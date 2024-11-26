@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cisecraft</title>
+  <style>
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  main {
+    max-width: 40rem;
+    padding: 1rem;
+    margin: 0 auto;
+  }
+
+  h1, h2, h3 {
+    font-weight: normal;
+  }
+
+  a {
+    color: blue;
+  }
+
+  a:hover {
+    background-color: blue;
+    color: white;
+    text-decoration: none;
+  }
+
+  code {
+    background-color: #f0f0ff;
+    border: 1px solid #e0e0f0;
+    padding: 0.125rem 0.25rem;
+  }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Cisecraft</h1>
+  <h2>How to join:</h2>
+  <ol>
+    <li>
+      <p>Generate an SSH keypair:</p>
+      <p>Linux: <code>ssh-keygen -f ~/.ssh/id_cisecraft</code></p>
+      <p>Windows: <code>ssh-keygen -f %USERPROFILE%\.ssh\id_cisecraft</code></p>
+    </li>
+    <li>
+      <p>
+        Send me an email with the public key file
+        (<code>id_cisecraft.pub</code>) to
+        <a href="mailto:li.daniel@ufl.edu">li.daniel@ufl.edu</a>.
+        Make sure you send the right file; never send the private key
+        (<code>id_cisecraft</code>) to anyone!
+      </p>
+    </li>
+    <li>
+      <p>
+        Once your key is configured, you can tunnel to the Cisecraft server
+        using ssh. I highly recommend creating a script for this.
+      </p>
+      <p>Linux: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes -i ~/.ssh/id_cisecraft li.daniel@storm.cise.ufl.edu</code></p>
+      <p>Windows: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes -i %USERPROFILE%\.ssh\id_cisecraft li.daniel@storm.cise.ufl.edu</code></p>
+      <p>
+        For Windows, you can download the script here:
+        <a href="connect.cmd">connect.cmd</a>.
+        Save to the desktop if you like. The first run might trigger an
+        antivirus warning, just run anyway.
+      </p>
+    </li>
+    <li>
+      <p>
+        In Minecraft, create a server with address
+        <code>localhost:25452</code>. When you want to enter the server, first
+        start the ssh session (make sure you keep it running in the
+        background). If your key was configured correctly, there should be no
+        password prompt, and you should receive a message saying the connection
+        was successful. When you are finished playing, go back to the ssh
+        session and press CTRL-C to terminate the connection.
+      </p>
+    </li>
+  </ol>
+</main>
+</body>
+</html>

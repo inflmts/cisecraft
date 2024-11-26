@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "You are now connected to CISECraft."
+echo "You are now connected to Cisecraft."
 echo "Access the server at: localhost:25452"
 echo "Press CTRL-C to quit."
 exec cat >/dev/null

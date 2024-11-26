@@ -1,5 +1,5 @@
 [Unit]
-Description=CISECraft Minecraft Server
+Description=Cisecraft Minecraft Server
 ConditionHost=storm.cise.ufl.edu
 
 [Service]

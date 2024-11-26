@@ -2,14 +2,26 @@
 
 set -ue
 
-source_dir="$HOME/cisecraft"
-server_dir=/tmp/cisecraft
-server_jar_url="https://meta.fabricmc.net/v2/versions/loader/1.21.1/0.16.3/1.0.1/server/jar"
-server_jar="fabric-1.21.1-0.16.3-1.0.1.jar"
+# server configuration
+minecraft_version=1.21.1
+fabric_version=0.16.3
+installer_version=1.0.1
 java_dist_url="https://download.java.net/java/GA/jdk22.0.2/c9ecb94cd31b495da20a27d4581645e8/9/GPL/openjdk-22.0.2_linux-x64_bin.tar.gz"
 java_dir="jdk-22.0.2"
+mods='
+https://cdn.modrinth.com/data/P7dR8mSH/versions/gQS3JbZO/fabric-api-0.103.0+1.21.1.jar
+https://cdn.modrinth.com/data/t6XBQ2xn/versions/30ak0J3Q/tick-stasis-1.1.0.jar
+https://cdn.modrinth.com/data/FJI3H6YI/versions/Yds9fTAP/convenient-mobgriefing-2.1.2.jar
+'
 
-server_args=
+source_dir="$HOME/cisecraft"
+server_dir=/tmp/cisecraft
+server_jar_url="https://meta.fabricmc.net/v2/versions/loader/$minecraft_version/$fabric_version/$installer_version/server/jar"
+server_jar="fabric-$minecraft_version-$fabric_version-$installer_version.jar"
+
+init_only=
+
+#-----------------------------------------------------------------------------
 
 err() { printf >&2 'error: %s\n' "$*"; }
 warn() { print >&2 'warning: %s\n' "$*"; }
@@ -20,7 +32,7 @@ usage() {
 Usage:
   server [<option>...]
 
-  Launch the CISECraft Minecraft server.
+  Launch the Cisecraft Minecraft server.
 
 Options:
   --init    initialize server and exit
@@ -30,82 +42,75 @@ EOF
 
 for opt; do
   case $opt in
-    --init) server_args='--initSettings' ;;
+    --init) init_only=1 ;;
     --help) usage; exit 0 ;;
     *) err "invalid option: $opt"; exit 2 ;;
   esac
 done
 
+#-----------------------------------------------------------------------------
+
 # this is for JNA
 export XDG_CACHE_HOME="$XDG_RUNTIME_DIR/cache"
 
-# no need to check if we own the server directory
-# something will fail eventually
-
 mkdir -p "$server_dir"
+# check if we own the server directory
+if [ ! -O "$server_dir" ]; then
+  err "the server directory was stolen by another user!"
+  exit 1
+fi
 cd "$server_dir"
+
+# link persistent files
+ln -sfT "$source_dir/world" world
+ln -sfT world/usercache.json usercache.json
+[ -e world/usercache.json ] || : >> world/usercache.json
+
+# generate static files
+cp -T "$source_dir/ops.json" ops.json
+cp -T "$source_dir/server.properties" server.properties
+echo "eula=true" > eula.txt
 
 # download Java if necessary
 if [ ! -f "$java_dir/bin/java" ]; then
   rm -rf "$java_dir"
   echo "Downloading Java..."
-  curl -Lf -o "java.tar.gz" "$java_dist_url"
+  curl -Lf -o java.tar.gz "$java_dist_url"
   echo "Extracting Java..."
-  tar -xf "java.tar.gz"
-  rm "java.tar.gz"
+  tar -xf java.tar.gz
+  rm -f java.tar.gz
 fi
 
-# download server JAR if necessary
+# download server jar if necessary
 if [ ! -f "$server_jar" ]; then
   echo "Downloading server JAR..."
   curl -Lf -o "$server_jar" "$server_jar_url"
 fi
 
-# create mod directory
-mkdir -p mods
+rm -rf mods
+mkdir -p modcache mods
 
-mods='
-https://cdn.modrinth.com/data/P7dR8mSH/versions/gQS3JbZO/fabric-api-0.103.0+1.21.1.jar
-https://cdn.modrinth.com/data/t6XBQ2xn/versions/30ak0J3Q/tick-stasis-1.1.0.jar
-https://cdn.modrinth.com/data/FJI3H6YI/versions/Yds9fTAP/convenient-mobgriefing-2.1.2.jar
-'
-
-# prune old mods
-for file in mods/*.jar; do
-  [ -e "$file" ] || continue
-  for mod in $mods; do
-    mod_file="mods/${mod##*/}"
-    if [ "$file" = "$mod_file" ]; then
-      continue 2
-    fi
-  done
-  echo "Removing $file"
-  rm "$file"
-done
-
-# install new mods
+# download missing mods
 for mod in $mods; do
-  mod_file="mods/${mod##*/}"
-  if [ ! -e "mods/${mod##*/}" ]; then
+  mod_file="modcache/${mod##*/}"
+  if [ ! -e "$mod_file" ]; then
     echo "Downloading $mod_file"
-    curl -LfsS -o "$mod_file" "$mod"
+    curl -Lf -o "$mod_file" "$mod"
   fi
 done
 
-# agree to EULA
-if [ ! -e eula.txt ]; then
-  echo "Generating eula.txt..."
-  echo "eula=true" > eula.txt
-fi
+# regenerate mods directory
+for mod in $mods; do
+  file=${mod##*/}
+  ln -sT "../modcache/$file" "mods/$file"
+done
 
-# link/copy persistent files
-ln -sfT "$source_dir/world" world
-cp -T "$source_dir/ops.json" ops.json
-cp -T "$source_dir/server.properties" server.properties
-[ -e world/usercache.json ] || : >> world/usercache.json
-ln -sfT world/usercache.json usercache.json
+if [ "$init_only" ]; then
+  exit 0
+fi
 
 echo "Starting server..."
 exec "$java_dir/bin/java" \
+  -Xmx8G \
   -Dlog4j.configurationFile="$source_dir/log4j.xml" \
-  -jar "$server_jar" --nogui $server_args
+  -jar "$server_jar" --nogui
