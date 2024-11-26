@@ -62,8 +62,8 @@
         Once your key is configured, you can tunnel to the Cisecraft server
         using ssh. I highly recommend creating a script for this.
       </p>
-      <p>Linux: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes -i ~/.ssh/id_cisecraft li.daniel@storm.cise.ufl.edu</code></p>
-      <p>Windows: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes -i %USERPROFILE%\.ssh\id_cisecraft li.daniel@storm.cise.ufl.edu</code></p>
+      <p>Linux: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes -o BatchMode=yes -i ~/.ssh/id_cisecraft li.daniel@storm.cise.ufl.edu</code></p>
+      <p>Windows: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes -o BatchMode=yes -i %USERPROFILE%\.ssh\id_cisecraft li.daniel@storm.cise.ufl.edu</code></p>
       <p>
         For Windows, you can download the script here:
         <a href="connect.cmd">connect.cmd</a>.
