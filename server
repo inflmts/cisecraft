@@ -61,8 +61,17 @@ if [ ! -O "$server_dir" ]; then
 fi
 cd "$server_dir"
 
+# get current world number
+read -r current < "$source_dir/current"
+case $current in
+  [0-9][0-9]) ;;
+  *) err "invalid current world number"; exit 1 ;;
+esac
+
 # link persistent files
-ln -sfT "$source_dir/world" world
+world_dir="$source_dir/worlds/$current"
+mkdir -p "$world_dir"
+ln -sfT "$world_dir" world
 ln -sfT world/usercache.json usercache.json
 [ -e world/usercache.json ] || : >> world/usercache.json
 
