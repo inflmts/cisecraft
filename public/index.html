@@ -41,45 +41,38 @@
 <body>
 <main>
   <h1>Cisecraft</h1>
-  <h2>How to join:</h2>
+  <p>
+    <b>Cisecraft</b> is a Minecraft server hosted on the
+    <b>storm.cise.ufl.edu</b> bastion server. In order to connect to the
+    server, you must have SSH access to <b>storm.cise.ufl.edu</b>, which means
+    you must be registered in the CISE department at the University of Florida.
+  </p>
+  <h2>How to play:</h2>
   <ol>
     <li>
-      <p>Generate an SSH keypair:</p>
-      <p>Linux: <code>ssh-keygen -f ~/.ssh/id_cisecraft</code></p>
-      <p>Windows: <code>ssh-keygen -f %USERPROFILE%\.ssh\id_cisecraft</code></p>
-    </li>
-    <li>
       <p>
-        Send me an email with the public key file
-        (<code>id_cisecraft.pub</code>) to
-        <a href="mailto:li.daniel@ufl.edu">li.daniel@ufl.edu</a>.
-        Make sure you send the right file; never send the private key
-        (<code>id_cisecraft</code>) to anyone!
+        (Recommended) Set up SSH public-key authentication if you have not
+        already done so.
       </p>
     </li>
     <li>
       <p>
-        Once your key is configured, you can tunnel to the Cisecraft server
-        using ssh. I highly recommend creating a script for this.
+        When you want to play, SSH into <b>storm.cise.ufl.edu</b> and forward
+        TCP port 25452. The SSH session must remain in the background while you
+        play. I highly recommend creating a script for this.
       </p>
-      <p>Linux: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes -o BatchMode=yes -i ~/.ssh/id_cisecraft li.daniel@storm.cise.ufl.edu</code></p>
-      <p>Windows: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes -o BatchMode=yes -i %USERPROFILE%\.ssh\id_cisecraft li.daniel@storm.cise.ufl.edu</code></p>
+      <p>Linux: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes <i>username</i>@storm.cise.ufl.edu</code></p>
+      <p>Windows: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes <i>username</i>@storm.cise.ufl.edu</code></p>
       <p>
-        For Windows, you can download the script here:
+        For Windows, a sample script is available here:
         <a href="connect.cmd">connect.cmd</a>.
-        Save to the desktop if you like. The first run might trigger an
-        antivirus warning, just run anyway.
       </p>
     </li>
     <li>
       <p>
         In Minecraft, create a server with address
-        <code>localhost:25452</code>. When you want to enter the server, first
-        start the ssh session (make sure you keep it running in the
-        background). If your key was configured correctly, there should be no
-        password prompt, and you should receive a message saying the connection
-        was successful. When you are finished playing, go back to the ssh
-        session and press CTRL-C to terminate the connection.
+        <code>localhost:25452</code>. Start the SSH session, then connect to
+        the server as usual.
       </p>
     </li>
   </ol>
