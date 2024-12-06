@@ -36,6 +36,13 @@
     border: 1px solid #e0e0f0;
     padding: 0.125rem 0.25rem;
   }
+
+  .code-block {
+    display: block;
+    white-space: nowrap;
+    overflow: auto;
+    padding: 0.25rem 0.5rem;
+  }
   </style>
 </head>
 <body>
@@ -52,7 +59,10 @@
     <li>
       <p>
         (Recommended) Set up SSH public-key authentication if you have not
-        already done so.
+        already done so. Additionally, <code>touch ~/.hushlogin</code> on the
+        server and put <code>LogLevel error</code> in your
+        <code>~/.ssh/config</code> (or pass <code>-q</code> to
+        <code>ssh</code>) to shut up the annoying server banners.
       </p>
     </li>
     <li>
@@ -61,12 +71,32 @@
         TCP port 25452. The SSH session must remain in the background while you
         play. I highly recommend creating a script for this.
       </p>
-      <p>Linux: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes <i>username</i>@storm.cise.ufl.edu</code></p>
-      <p>Windows: <code>ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes <i>username</i>@storm.cise.ufl.edu</code></p>
+      <code class="code-block">
+        ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes <i>username</i>@storm.cise.ufl.edu
+      </code>
       <p>
-        For Windows, a sample script is available here:
-        <a href="connect.cmd">connect.cmd</a>.
+        For Windows, you can create a desktop shortcut. Right-click on the
+        desktop, select <b>New &gt; Shortcut</b>, then in the input box, type
+        the full command line from above. Opening this shortcut will then
+        automatically run this command in a terminal window.
       </p>
+      <p>
+        I have a script named <b>connect-shell</b> on the server with these
+        contents:
+      </p>
+      <code class="code-block">
+        #!/bin/sh<br>
+        echo "You are now connected to Cisecraft."<br>
+        echo "Access the server at: localhost:25452"<br>
+        echo "Press CTRL-C to quit."<br>
+        exec cat &gt;/dev/null
+      </code>
+      <p>
+        So the command I use is:
+      </p>
+      <code class="code-block">
+        ssh -q -L 25452:localhost:25452 -o ExitOnForwardFailure=yes li.daniel@storm.cise.ufl.edu "exec cisecraft/connect-shell"
+      </code>
     </li>
     <li>
       <p>
