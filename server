@@ -2,22 +2,9 @@
 
 set -ue
 
-# server configuration
-minecraft_version=1.21.1
-fabric_version=0.16.3
-installer_version=1.0.1
-java_dist_url="https://download.java.net/java/GA/jdk22.0.2/c9ecb94cd31b495da20a27d4581645e8/9/GPL/openjdk-22.0.2_linux-x64_bin.tar.gz"
-java_dir="jdk-22.0.2"
-mods='
-https://cdn.modrinth.com/data/P7dR8mSH/versions/gQS3JbZO/fabric-api-0.103.0+1.21.1.jar
-https://cdn.modrinth.com/data/t6XBQ2xn/versions/30ak0J3Q/tick-stasis-1.1.0.jar
-https://cdn.modrinth.com/data/FJI3H6YI/versions/Yds9fTAP/convenient-mobgriefing-2.1.2.jar
-'
-
+# global configuration
 source_dir="$HOME/cisecraft"
 server_dir=/tmp/cisecraft
-server_jar_url="https://meta.fabricmc.net/v2/versions/loader/$minecraft_version/$fabric_version/$installer_version/server/jar"
-server_jar="fabric-$minecraft_version-$fabric_version-$installer_version.jar"
 
 init_only=
 
@@ -53,22 +40,60 @@ done
 # this is for JNA
 export XDG_CACHE_HOME="$XDG_RUNTIME_DIR/cache"
 
+# get current world number
+read -r current < "$source_dir/current"
+case $current in
+  [0-9][0-9]) ;;
+  *) err "invalid current world number '$current'"; exit 1 ;;
+esac
+
+# read server config
+config_file="$source_dir/config/$current"
+if [ ! -e "$config_file" ]; then
+  err "world $current not configured"
+  exit 1
+fi
+unset minecraft_version fabric_version installer_version \
+      java_dist_url java_dir world_name mods
+mod_urls=
+while read -r key value; do
+  case $key in
+    minecraft) minecraft_version=$value ;;
+    fabric) fabric_version=$value ;;
+    installer) installer_version=$value ;;
+    java_dist_url) java_dist_url=$value ;;
+    java_dir) java_dir=$value ;;
+    name) world_name=$value ;;
+    mod) mod_urls="$mod_urls $value" ;;
+    '') ;;
+    *) err "unrecognized config key '$key'"; exit 1 ;;
+  esac
+done < "$config_file"
+
+# because of set -u, this will also catch unset keys
+echo "* Minecraft version: $minecraft_version"
+echo "* Fabric version: $fabric_version"
+echo "* Installer version: $installer_version"
+echo "* Java URL: $java_dist_url"
+echo "* Java directory: $java_dir"
+echo "* Mods:"
+for mod_url in $mod_urls; do
+  echo "    $mod_url"
+done
+echo
+
+server_jar_url="https://meta.fabricmc.net/v2/versions/loader/$minecraft_version/$fabric_version/$installer_version/server/jar"
+server_jar="fabric-$minecraft_version-$fabric_version-$installer_version.jar"
+
+# check & enter the server directory
 mkdir -p "$server_dir"
-# check if we own the server directory
 if [ ! -O "$server_dir" ]; then
   err "the server directory was stolen by another user!"
   exit 1
 fi
 cd "$server_dir"
 
-# get current world number
-read -r current < "$source_dir/current"
-case $current in
-  [0-9][0-9]) ;;
-  *) err "invalid current world number"; exit 1 ;;
-esac
-
-# link persistent files
+# prepare world directory
 world_dir="$source_dir/worlds/$current"
 mkdir -p "$world_dir"
 ln -sfT "$world_dir" world
@@ -84,7 +109,7 @@ echo "eula=true" > eula.txt
 if [ ! -f "$java_dir/bin/java" ]; then
   rm -rf "$java_dir"
   echo "Downloading Java..."
-  curl -Lf -o java.tar.gz "$java_dist_url"
+  curl -LfsS -o java.tar.gz "$java_dist_url"
   echo "Extracting Java..."
   tar -xf java.tar.gz
   rm -f java.tar.gz
@@ -93,25 +118,27 @@ fi
 # download server jar if necessary
 if [ ! -f "$server_jar" ]; then
   echo "Downloading server JAR..."
-  curl -Lf -o "$server_jar" "$server_jar_url"
+  curl -LfsS -o "$server_jar" "$server_jar_url"
 fi
 
 rm -rf mods
 mkdir -p modcache mods
 
 # download missing mods
-for mod in $mods; do
-  mod_file="modcache/${mod##*/}"
+mods=
+for mod_url in $mod_urls; do
+  mod=$(printf %s "$mod_url" | tr -c '0-9A-Za-z_.+~%-' '[%*]')
+  mods="$mods $mod"
+  mod_file="modcache/$mod.jar"
   if [ ! -e "$mod_file" ]; then
-    echo "Downloading $mod_file"
-    curl -Lf -o "$mod_file" "$mod"
+    echo "Downloading $mod_url"
+    curl -LfsS -o "$mod_file" "$mod_url"
   fi
 done
 
 # regenerate mods directory
 for mod in $mods; do
-  file=${mod##*/}
-  ln -sT "../modcache/$file" "mods/$file"
+  ln -sT "../modcache/$mod.jar" "mods/$mod.jar"
 done
 
 if [ "$init_only" ]; then
