@@ -54,36 +54,45 @@ if [ ! -e "$config_file" ]; then
   exit 1
 fi
 unset minecraft_version fabric_version installer_version \
-      java_dist_url java_dir world_name mods
+      java_version current_name mod_urls
 mod_urls=
-while read -r key value; do
+while read -r key value value2; do
   case $key in
     minecraft) minecraft_version=$value ;;
     fabric) fabric_version=$value ;;
     installer) installer_version=$value ;;
-    java_dist_url) java_dist_url=$value ;;
-    java_dir) java_dir=$value ;;
-    name) world_name=$value ;;
+    java) java_version=$value ;;
+    name) current_name=$value ;;
     mod) mod_urls="$mod_urls $value" ;;
     '') ;;
     *) err "unrecognized config key '$key'"; exit 1 ;;
   esac
 done < "$config_file"
 
-# because of set -u, this will also catch unset keys
-echo "* Minecraft version: $minecraft_version"
-echo "* Fabric version: $fabric_version"
-echo "* Installer version: $installer_version"
-echo "* Java URL: $java_dist_url"
-echo "* Java directory: $java_dir"
-echo "* Mods:"
-for mod_url in $mod_urls; do
-  echo "    $mod_url"
-done
-echo
-
+case $java_version in
+  22.0.2)
+    java_dist_url="https://download.java.net/java/GA/jdk22.0.2/c9ecb94cd31b495da20a27d4581645e8/9/GPL/openjdk-22.0.2_linux-x64_bin.tar.gz"
+    ;;
+  *)
+    err "unrecognized java version '$java_version'"
+    exit 1
+    ;;
+esac
+java_dir="jdk-$java_version"
 server_jar_url="https://meta.fabricmc.net/v2/versions/loader/$minecraft_version/$fabric_version/$installer_version/server/jar"
 server_jar="fabric-$minecraft_version-$fabric_version-$installer_version.jar"
+motd="\\u00A7bCisecraft: Out of Control\\u00A7r\\nWorld $current: \\u00A7e$current_name \\u00A7a$minecraft_version"
+
+# because of set -u, this will also catch unset keys
+echo "Minecraft version: $minecraft_version"
+echo "Fabric version: $fabric_version"
+echo "Installer version: $installer_version"
+echo "Java version: $java_version"
+echo "Mods:"
+for mod_url in $mod_urls; do
+  echo "  - $mod_url"
+done
+echo
 
 # check & enter the server directory
 mkdir -p "$server_dir"
@@ -102,7 +111,24 @@ ln -sfT world/usercache.json usercache.json
 
 # generate static files
 cp -T "$source_dir/ops.json" ops.json
-cp -T "$source_dir/server.properties" server.properties
+
+cat > server.properties <<EOF
+difficulty=easy
+enable-command-block=false
+gamemode=survival
+hardcore=false
+level-name=world
+max-players=20
+motd=$motd
+online-mode=true
+query.port=25452
+server-ip=127.0.0.1
+server-port=25452
+simulation-distance=10
+spawn-protection=0
+view-distance=10
+EOF
+
 echo "eula=true" > eula.txt
 
 # download Java if necessary
